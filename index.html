@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Digital Book Page</title>
+  <style>
+    body {
+      margin: 0;
+      background: #000; /* black background */
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      height: 100vh;
+    }
+
+    .book {
+      background: #fff;
+      box-shadow:
+        0 0 60px rgba(0,0,0,0.6),
+        inset 0 0 60px rgba(0,0,0,0.05);
+      border: 2px solid #111;
+      padding: 0;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      overflow: hidden;
+    }
+
+    img {
+      display: block;
+      width: 95vw;
+      height: auto;
+      border: none;
+      border-radius: 0;
+      object-fit: contain;
+    }
+  </style>
+</head>
+<body>
+  <div class="book">
+    <img src="https://iili.io/K8tJ5Mu.jpg" alt="Digital Book Image">
+  </div>
+</body>
+</html>
