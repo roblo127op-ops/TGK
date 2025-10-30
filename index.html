@@ -1,110 +1,155 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
-<meta charset="utf-8"/>
-<meta name="viewport" content="width=device-width,initial-scale=1"/>
-<title>Glyph Vigenère Chart — Key: TRIANGILUM</title>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Letter Network Mesh</title>
 <style>
-  :root{--bg:#071126;--card:#0b1220;--muted:#9fb0d6;--accent:#bfe0ff}
-  body{margin:0;font-family:Segoe UI,Roboto,Arial,system-ui;background:var(--bg);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:18px}
-  .wrap{width:100%;max-width:1100px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
-  h1{margin:0 0 10px 0;font-size:18px}
-  .subtitle{color:var(--muted);font-size:13px;margin-bottom:12px}
-  .gridWrap{overflow:auto;border-radius:8px;background:transparent;padding:6px}
-  table{border-collapse:collapse;margin:0 auto;font-family:monospace}
-  th,td{border:1px solid rgba(255,255,255,0.06);padding:8px 10px;text-align:center;min-width:34px;height:34px}
-  th{background:rgba(255,255,255,0.04);color:var(--accent);font-weight:700}
-  td{background:rgba(255,255,255,0.02);font-size:18px}
-  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
-  .pair{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-family:monospace}
-  .note{color:var(--muted);font-size:13px;margin-top:10px}
-  @media (max-width:720px){ th,td{padding:6px 8px;min-width:28px;height:28px;font-size:16px} }
+  body { margin:0; overflow:hidden; background:black; }
+  .distLabel {
+    position:absolute;
+    color:#00ff9d;
+    font-family: monospace;
+    font-size: 12px;
+    pointer-events:none;
+  }
 </style>
 </head>
 <body>
-  <div class="wrap" role="main">
-    <h1>Glyph Vigenère Tableau — Key: <span style="color:var(--accent)">TRIANGILUM</span></h1>
-    <div class="subtitle">Keyed alphabet (glyphs) used as row & column headers. Use the legend below to map glyph ↔ letter.</div>
 
-    <div class="gridWrap" id="tableContainer" aria-live="polite"></div>
-
-    <div class="note">Legend — glyph : Latin letter</div>
-    <div id="legend" class="legend" aria-hidden="false"></div>
-
-    <div class="note">How to use: find plaintext letter → its glyph from legend, find key letter glyph, intersect row(plain) & column(key) in the table to get ciphertext glyph. Reverse process for decryption.</div>
-  </div>
+<script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
 <script>
-/* User glyph mapping (A → Z) */
-const glyphMap = {
-  A: "ꑇ", B: "ꐕ", C: "ꌇ", D: "ꌈ", E: "ꉕ", F: "ӫ", G: "Ӫ", H: "Ѷ",
-  I: "ꃼ", J: "ꆜ", K: "₯", L: "฿", M: "௹", N: "∳", O: "∲", P: "∱",
-  Q: "∰", R: "∯", S: "𝖁", T: "𝖀", U: "𝕿", V: "𝕾", W: "𝕽", X: "𝖃",
-  Y: "𝖂", Z: "℣"
-};
+const glyphs = "ꑇꐕꌇꌈꉕӫӪѶꃼꆜ₯฿௹∳∲∱∰∯𝖁𝖀𝕿𝕾𝕽𝖃𝖂℣".split("");
 
-/* Derive keyed alphabet from key TRIANGILUM */
-const key = "TRIANGILUM".toUpperCase().replace(/[^A-Z]/g,"");
-const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
-const seen = new Set();
-const keyedLetters = [];
-for(const ch of key){
-  if(!seen.has(ch)){ seen.add(ch); keyedLetters.push(ch); }
+const scene = new THREE.Scene();
+const camera = new THREE.PerspectiveCamera(70, window.innerWidth/window.innerHeight, 0.1, 3000);
+camera.position.z = 800;
+
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const group = new THREE.Group();
+scene.add(group);
+
+// Tetrahedron vertices for final formation
+const tetra = [
+  new THREE.Vector3(0,200,0),
+  new THREE.Vector3(200,-100,200),
+  new THREE.Vector3(-200,-100,200),
+  new THREE.Vector3(0,-100,-200)
+];
+
+let letters = [];
+let lines = [];
+
+glyphs.forEach((g,i)=>{
+  // Letter sprite
+  const canvas = document.createElement('canvas');
+  canvas.width = 64; canvas.height = 64;
+  const ctx = canvas.getContext('2d');
+  ctx.fillStyle = "white";
+  ctx.strokeStyle = "white";
+  ctx.lineWidth = 2;
+  ctx.font = "48px monospace";
+  ctx.strokeText(g, 8, 48);
+  const texture = new THREE.CanvasTexture(canvas);
+  const material = new THREE.SpriteMaterial({map: texture});
+  const sprite = new THREE.Sprite(material);
+  
+  // Circle start
+  const angle = i/glyphs.length * Math.PI*2;
+  sprite.position.set(Math.cos(angle)*300, Math.sin(angle)*300, 0);
+  group.add(sprite);
+  letters.push(sprite);
+
+  // Label
+  const div = document.createElement('div');
+  div.className = 'distLabel';
+  div.innerText = "0 m";
+  document.body.appendChild(div);
+  sprite.distLabels = [div];
+
+  // Lines array for multiple neighbors
+  sprite.neighborLines = [];
+});
+
+function getNearestNeighbors(i, count=3){
+  const neighbors = [];
+  letters.forEach((l2,j)=>{
+    if(i===j) return;
+    const d = letters[i].position.distanceTo(l2.position);
+    neighbors.push({index:j, dist:d});
+  });
+  neighbors.sort((a,b)=>a.dist-b.dist);
+  return neighbors.slice(0,count);
 }
-/* Append remaining letters in normal order (you can change this to another scramble if desired) */
-for(const ch of base){
-  if(!seen.has(ch)){ seen.add(ch); keyedLetters.push(ch); }
-}
 
-/* Convert keyed letters to keyed glyphs */
-const keyedGlyphs = keyedLetters.map(L=>glyphMap[L]);
+// Create line objects for each letter to 3 nearest neighbors
+letters.forEach((l,i)=>{
+  const neighbors = getNearestNeighbors(i,3);
+  neighbors.forEach(n=>{
+    const geometry = new THREE.BufferGeometry().setFromPoints([l.position, letters[n.index].position]);
+    const materialLine = new THREE.LineBasicMaterial({color:0x00ff9d});
+    const line = new THREE.Line(geometry, materialLine);
+    scene.add(line);
+    l.neighborLines.push({line:line, targetIndex:n.index});
+  });
+});
 
-/* Build table: 26x26 with glyphs, table[i][j] = glyph at index (i + j) % 26 */
-function buildTable(glyphs){
-  const n = glyphs.length;
-  const table = document.createElement("table");
-  // header row
-  const thead = document.createElement("thead");
-  const hr = document.createElement("tr");
-  const corner = document.createElement("th"); corner.textContent = ""; hr.appendChild(corner);
-  for(let c=0;c<n;c++){ const th = document.createElement("th"); th.textContent = glyphs[c]; hr.appendChild(th); }
-  thead.appendChild(hr);
-  table.appendChild(thead);
-  const tbody = document.createElement("tbody");
-  for(let r=0;r<n;r++){
-    const tr = document.createElement("tr");
-    const rth = document.createElement("th"); rth.textContent = glyphs[r]; tr.appendChild(rth);
-    for(let c=0;c<n;c++){
-      const td = document.createElement("td");
-      const idx = (r + c) % n;
-      td.textContent = glyphs[idx];
-      tr.appendChild(td);
+let time = 0;
+function animate(){
+  requestAnimationFrame(animate);
+  time += 0.01;
+  const phase = (time < 6) ? "circle" : "tetra";
+
+  letters.forEach((l,i)=>{
+    let target;
+    if(phase==="circle"){
+      const angle = time + i/glyphs.length * Math.PI*2;
+      target = new THREE.Vector3(Math.cos(angle)*300, Math.sin(angle)*300, Math.sin(time*2+i)*20);
+    } else {
+      const t = tetra[i % tetra.length];
+      target = new THREE.Vector3(t.x, t.y, t.z);
     }
-    tbody.appendChild(tr);
-  }
-  table.appendChild(tbody);
-  return table;
+    l.position.lerp(target,0.05);
+  });
+
+  // Update lines and labels
+  letters.forEach((l,i)=>{
+    l.neighborLines.forEach(nl=>{
+      const target = letters[nl.targetIndex];
+      nl.line.geometry.setFromPoints([l.position, target.position]);
+      nl.line.geometry.attributes.position.needsUpdate = true;
+
+      // Update label at midpoint
+      const mid = new THREE.Vector3().addVectors(l.position, target.position).multiplyScalar(0.5);
+      const vector = mid.clone().project(camera);
+      const x = (vector.x+1)/2 * window.innerWidth;
+      const y = (-vector.y+1)/2 * window.innerHeight;
+      l.distLabels[0].style.left = x + "px";
+      l.distLabels[0].style.top = y + "px";
+      const dist = l.position.distanceTo(target.position);
+      l.distLabels[0].innerText = dist.toFixed(1) + " m";
+    });
+  });
+
+  group.rotation.y += 0.002;
+  group.rotation.x += 0.001;
+
+  renderer.render(scene,camera);
 }
 
-/* Render */
-const container = document.getElementById("tableContainer");
-container.innerHTML = "";
-container.appendChild(buildTable(keyedGlyphs));
+// Responsive
+window.addEventListener('resize',()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
 
-/* Legend (glyph : Latin) - show keyed alphabet mapping first for clarity */
-const legendDiv = document.getElementById("legend");
-/* show keyed order legend first */
-const heading = document.createElement("div");
-heading.className = "pair";
-heading.textContent = "Keyed order (letters): " + keyedLetters.join(" ");
-legendDiv.appendChild(heading);
-/* show glyph : letter pairs */
-for(const L of Object.keys(glyphMap)){
-  const p = document.createElement("div");
-  p.className = "pair";
-  p.textContent = glyphMap[L] + " : " + L;
-  legendDiv.appendChild(p);
-}
+animate();
 </script>
+
 </body>
 </html>
