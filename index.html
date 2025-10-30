@@ -1,45 +1,110 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Digital Book Page</title>
-  <style>
-    body {
-      margin: 0;
-      background: #000; /* black background */
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      height: 100vh;
-    }
-
-    .book {
-      background: #fff;
-      box-shadow:
-        0 0 60px rgba(0,0,0,0.6),
-        inset 0 0 60px rgba(0,0,0,0.05);
-      border: 2px solid #111;
-      padding: 0;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      overflow: hidden;
-    }
-
-    img {
-      display: block;
-      width: 95vw;
-      height: auto;
-      border: none;
-      border-radius: 0;
-      object-fit: contain;
-    }
-  </style>
+<meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1"/>
+<title>Glyph Vigenère Chart — Key: TRIANGILUM</title>
+<style>
+  :root{--bg:#071126;--card:#0b1220;--muted:#9fb0d6;--accent:#bfe0ff}
+  body{margin:0;font-family:Segoe UI,Roboto,Arial,system-ui;background:var(--bg);color:#e6eef8;display:flex;align-items:center;justify-content:center;padding:18px}
+  .wrap{width:100%;max-width:1100px;background:linear-gradient(180deg, rgba(255,255,255,0.02), rgba(255,255,255,0.005));padding:14px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,0.6)}
+  h1{margin:0 0 10px 0;font-size:18px}
+  .subtitle{color:var(--muted);font-size:13px;margin-bottom:12px}
+  .gridWrap{overflow:auto;border-radius:8px;background:transparent;padding:6px}
+  table{border-collapse:collapse;margin:0 auto;font-family:monospace}
+  th,td{border:1px solid rgba(255,255,255,0.06);padding:8px 10px;text-align:center;min-width:34px;height:34px}
+  th{background:rgba(255,255,255,0.04);color:var(--accent);font-weight:700}
+  td{background:rgba(255,255,255,0.02);font-size:18px}
+  .legend{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}
+  .pair{background:rgba(255,255,255,0.02);padding:6px 8px;border-radius:6px;border:1px solid rgba(255,255,255,0.03);font-family:monospace}
+  .note{color:var(--muted);font-size:13px;margin-top:10px}
+  @media (max-width:720px){ th,td{padding:6px 8px;min-width:28px;height:28px;font-size:16px} }
+</style>
 </head>
 <body>
-  <div class="book">
-    <img src="https://iili.io/K8tJ5Mu.jpg" alt="Digital Book Image">
+  <div class="wrap" role="main">
+    <h1>Glyph Vigenère Tableau — Key: <span style="color:var(--accent)">TRIANGILUM</span></h1>
+    <div class="subtitle">Keyed alphabet (glyphs) used as row & column headers. Use the legend below to map glyph ↔ letter.</div>
+
+    <div class="gridWrap" id="tableContainer" aria-live="polite"></div>
+
+    <div class="note">Legend — glyph : Latin letter</div>
+    <div id="legend" class="legend" aria-hidden="false"></div>
+
+    <div class="note">How to use: find plaintext letter → its glyph from legend, find key letter glyph, intersect row(plain) & column(key) in the table to get ciphertext glyph. Reverse process for decryption.</div>
   </div>
+
+<script>
+/* User glyph mapping (A → Z) */
+const glyphMap = {
+  A: "ꑇ", B: "ꐕ", C: "ꌇ", D: "ꌈ", E: "ꉕ", F: "ӫ", G: "Ӫ", H: "Ѷ",
+  I: "ꃼ", J: "ꆜ", K: "₯", L: "฿", M: "௹", N: "∳", O: "∲", P: "∱",
+  Q: "∰", R: "∯", S: "𝖁", T: "𝖀", U: "𝕿", V: "𝕾", W: "𝕽", X: "𝖃",
+  Y: "𝖂", Z: "℣"
+};
+
+/* Derive keyed alphabet from key TRIANGILUM */
+const key = "TRIANGILUM".toUpperCase().replace(/[^A-Z]/g,"");
+const base = "ABCDEFGHIJKLMNOPQRSTUVWXYZ".split("");
+const seen = new Set();
+const keyedLetters = [];
+for(const ch of key){
+  if(!seen.has(ch)){ seen.add(ch); keyedLetters.push(ch); }
+}
+/* Append remaining letters in normal order (you can change this to another scramble if desired) */
+for(const ch of base){
+  if(!seen.has(ch)){ seen.add(ch); keyedLetters.push(ch); }
+}
+
+/* Convert keyed letters to keyed glyphs */
+const keyedGlyphs = keyedLetters.map(L=>glyphMap[L]);
+
+/* Build table: 26x26 with glyphs, table[i][j] = glyph at index (i + j) % 26 */
+function buildTable(glyphs){
+  const n = glyphs.length;
+  const table = document.createElement("table");
+  // header row
+  const thead = document.createElement("thead");
+  const hr = document.createElement("tr");
+  const corner = document.createElement("th"); corner.textContent = ""; hr.appendChild(corner);
+  for(let c=0;c<n;c++){ const th = document.createElement("th"); th.textContent = glyphs[c]; hr.appendChild(th); }
+  thead.appendChild(hr);
+  table.appendChild(thead);
+  const tbody = document.createElement("tbody");
+  for(let r=0;r<n;r++){
+    const tr = document.createElement("tr");
+    const rth = document.createElement("th"); rth.textContent = glyphs[r]; tr.appendChild(rth);
+    for(let c=0;c<n;c++){
+      const td = document.createElement("td");
+      const idx = (r + c) % n;
+      td.textContent = glyphs[idx];
+      tr.appendChild(td);
+    }
+    tbody.appendChild(tr);
+  }
+  table.appendChild(tbody);
+  return table;
+}
+
+/* Render */
+const container = document.getElementById("tableContainer");
+container.innerHTML = "";
+container.appendChild(buildTable(keyedGlyphs));
+
+/* Legend (glyph : Latin) - show keyed alphabet mapping first for clarity */
+const legendDiv = document.getElementById("legend");
+/* show keyed order legend first */
+const heading = document.createElement("div");
+heading.className = "pair";
+heading.textContent = "Keyed order (letters): " + keyedLetters.join(" ");
+legendDiv.appendChild(heading);
+/* show glyph : letter pairs */
+for(const L of Object.keys(glyphMap)){
+  const p = document.createElement("div");
+  p.className = "pair";
+  p.textContent = glyphMap[L] + " : " + L;
+  legendDiv.appendChild(p);
+}
+</script>
 </body>
 </html>
