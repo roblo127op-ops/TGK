@@ -19,6 +19,10 @@
 
 <script src="https://cdn.jsdelivr.net/npm/three@0.152.2/build/three.min.js"></script>
 
+<div style="display:none">
+  DEAD END, FAKE WEBSITE
+</div>
+
 <script>
 const glyphs = "ꑇꐕꌇꌈꉕӫӪѶꃼꆜ₯฿௹∳∲∱∰∯𝖁𝖀𝕿𝕾𝕽𝖃𝖂℣".split("");
 
@@ -109,6 +113,50 @@ function animate(){
     if(phase==="circle"){
       const angle = time + i/glyphs.length * Math.PI*2;
       target = new THREE.Vector3(Math.cos(angle)*300, Math.sin(angle)*300, Math.sin(time*2+i)*20);
+    } else {
+      const t = tetra[i % tetra.length];
+      target = new THREE.Vector3(t.x, t.y, t.z);
+    }
+    l.position.lerp(target,0.05);
+  });
+
+  // Update lines and labels
+  letters.forEach((l,i)=>{
+    l.neighborLines.forEach(nl=>{
+      const target = letters[nl.targetIndex];
+      nl.line.geometry.setFromPoints([l.position, target.position]);
+      nl.line.geometry.attributes.position.needsUpdate = true;
+
+      // Update label at midpoint
+      const mid = new THREE.Vector3().addVectors(l.position, target.position).multiplyScalar(0.5);
+      const vector = mid.clone().project(camera);
+      const x = (vector.x+1)/2 * window.innerWidth;
+      const y = (-vector.y+1)/2 * window.innerHeight;
+      l.distLabels[0].style.left = x + "px";
+      l.distLabels[0].style.top = y + "px";
+      const dist = l.position.distanceTo(target.position);
+      l.distLabels[0].innerText = dist.toFixed(1) + " m";
+    });
+  });
+
+  group.rotation.y += 0.002;
+  group.rotation.x += 0.001;
+
+  renderer.render(scene,camera);
+}
+
+// Responsive
+window.addEventListener('resize',()=>{
+  camera.aspect = window.innerWidth/window.innerHeight;
+  camera.updateProjectionMatrix();
+  renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+animate();
+</script>
+
+</body>
+</html>      target = new THREE.Vector3(Math.cos(angle)*300, Math.sin(angle)*300, Math.sin(time*2+i)*20);
     } else {
       const t = tetra[i % tetra.length];
       target = new THREE.Vector3(t.x, t.y, t.z);
